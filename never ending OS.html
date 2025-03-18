@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kali Linux Installer</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #00ff00;
+            font-family: "Courier New", monospace;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        .progress-bar {
+            width: 80%;
+            height: 20px;
+            background-color: #404040;
+            margin: 20px auto;
+            border: 2px solid black;
+            position: relative;
+        }
+        .progress {
+            height: 100%;
+            width: 0%;
+            background-color: #00ff00;
+        }
+        #status {
+            margin-top: 10px;
+        }
+        #terminal {
+            width: 80%;
+            height: 200px;
+            background-color: black;
+            color: #00ff00;
+            text-align: left;
+            padding: 10px;
+            margin: 20px auto;
+            overflow-y: auto;
+            border: 2px solid #00ff00;
+        }
+        #fake-input {
+            width: 80%;
+            background-color: black;
+            color: #00ff00;
+            border: none;
+            font-size: 16px;
+            font-family: monospace;
+            outline: none;
+            margin-top: 10px;
+            text-align: center;
+        }
+        .hidden {
+            display: none;
+        }
+        .fullscreen-warning {
+            background: black;
+            color: red;
+            font-size: 24px;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body onload="forceFullScreen()">
+    <div class="container">
+        <h1>Installing Kali Linux...</h1>
+        <div class="progress-bar">
+            <div class="progress" id="progress"></div>
+        </div>
+        <p id="status">Initializing Installation...</p>
+        <div id="terminal">[00:00] Starting installation process...<br></div>
+        <input type="text" id="fake-input" placeholder="Type commands here (but nothing works!)" onkeypress="return fakeTyping(event)">
+
+        <button id="restart-btn" class="hidden" onclick="restartInstall()">Restart Installation</button>
+    </div>
+
+    <!-- BIOS ERROR SCREEN (Hidden initially) -->
+    <div id="bios-error" class="fullscreen-warning hidden">
+        <div>
+            <h2>🚨 BIOS ERROR: Bootloader Corrupted!</h2>
+            <p>System Halted. Press CTRL + ALT + DEL to restart.</p>
+        </div>
+    </div>
+
+    <!-- KERNEL PANIC SCREEN (Hidden initially) -->
+    <div id="kernel-panic" class="fullscreen-warning hidden">
+        <div>
+            <h2>💀 KERNEL PANIC: SYSTEM FAILURE</h2>
+            <p>Rebooting in 10...9...8...</p>
+        </div>
+    </div>
+
+    <script>
+        let progress = 0;
+        let logMessages = [
+            "Checking disk partitions...",
+            "Mounting file system...",
+            "Extracting core packages...",
+            "Installing bootloader...",
+            "Configuring network settings...",
+            "Setting up user accounts...",
+            "Downloading additional drivers...",
+            "Configuring system services...",
+            "Finalizing installation...",
+            "Cleaning up temporary files..."
+        ];
+        let errorMessages = [
+            "ERROR: Unable to mount partition...",
+            "WARNING: Missing firmware detected...",
+            "ERROR: Package download failed, retrying...",
+            "WARNING: Low disk space detected...",
+            "ERROR: Bootloader installation failed...",
+            "WARNING: Unstable network connection..."
+        ];
+
+        function updateInstallation() {
+            if (progress < 99) {
+                progress += Math.floor(Math.random() * 10) + 5; // Random progress increase
+                document.getElementById("progress").style.width = progress + "%";
+                document.getElementById("status").innerText = "Installing... " + progress + "%";
+
+                let log = Math.random() < 0.8 ? logMessages[Math.floor(Math.random() * logMessages.length)]
+                                               : errorMessages[Math.floor(Math.random() * errorMessages.length)];
+                document.getElementById("terminal").innerHTML += `[${new Date().toLocaleTimeString()}] ${log}<br>`;
+                document.getElementById("terminal").scrollTop = document.getElementById("terminal").scrollHeight;
+
+                setTimeout(updateInstallation, Math.random() * 2000 + 500);
+            } else {
+                document.getElementById("status").innerText = "Kernel Panic!";
+                playErrorSound();
+                setTimeout(showKernelPanic, 2000);
+            }
+        }
+
+        function showKernelPanic() {
+            document.getElementById("kernel-panic").classList.remove("hidden");
+            setTimeout(() => {
+                document.getElementById("kernel-panic").classList.add("hidden");
+                showBiosError();
+            }, 8000);
+        }
+
+        function showBiosError() {
+            document.getElementById("bios-error").classList.remove("hidden");
+            playErrorSound();
+        }
+
+        function restartInstall() {
+            document.getElementById("bios-error").classList.add("hidden");
+            progress = 0;
+            document.getElementById("progress").style.width = "0%";
+            document.getElementById("status").innerText = "Restarting Installation...";
+            document.getElementById("terminal").innerHTML = "[00:00] Restarting installation process...<br>";
+            setTimeout(updateInstallation, 3000);
+        }
+
+        function fakeTyping(event) {
+            if (event.key === "Enter") {
+                document.getElementById("terminal").innerHTML += `<br>$ ${document.getElementById("fake-input").value}<br>Command not found.<br>`;
+                document.getElementById("fake-input").value = "";
+                return false;
+            }
+            return true;
+        }
+
+        function playErrorSound() {
+            let audio = new Audio("https://www.soundjay.com/button/beep-09.wav");
+            audio.play();
+            setTimeout(() => {
+                let crashSound = new Audio("https://www.soundjay.com/misc/sounds/fail-buzzer-01.mp3");
+                crashSound.play();
+            }, 3000);
+        }
+
+        function forceFullScreen() {
+            document.documentElement.requestFullscreen().catch(() => {});
+        }
+
+        // Start the Fake Installation
+        updateInstallation();
+    </script>
+</body>
+</html>
+\end{code}
